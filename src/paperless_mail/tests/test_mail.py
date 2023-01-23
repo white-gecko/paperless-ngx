@@ -1,6 +1,5 @@
 import dataclasses
 import email.contentmanager
-import os
 import random
 import uuid
 from collections import namedtuple
@@ -12,8 +11,11 @@ from unittest import mock
 from django.core.management import call_command
 from django.db import DatabaseError
 from django.test import TestCase
+from documents.data_models import ConsumableDocument
+from documents.data_models import DocumentMetadataOverrides
 from documents.models import Correspondent
 from documents.tests.utils import DirectoriesMixin
+from documents.tests.utils import DocumentConsumeDelayMixin
 from documents.tests.utils import FileSystemAssertsMixin
 from imap_tools import EmailAddress
 from imap_tools import FolderInfo
@@ -180,7 +182,12 @@ def fake_magic_from_buffer(buffer, mime=False):
 
 
 @mock.patch("paperless_mail.mail.magic.from_buffer", fake_magic_from_buffer)
-class TestMail(DirectoriesMixin, FileSystemAssertsMixin, TestCase):
+class TestMail(
+    DirectoriesMixin,
+    DocumentConsumeDelayMixin,
+    FileSystemAssertsMixin,
+    TestCase,
+):
     def setUp(self):
         self._used_uids = set()
 
@@ -1073,13 +1080,24 @@ class TestMail(DirectoriesMixin, FileSystemAssertsMixin, TestCase):
                 consume_tasks,
                 expected_signatures,
             ):
+
+                input_doc, overrides = consume_task.args
+                input_doc: ConsumableDocument = ConsumableDocument.from_dict(input_doc)
+                overrides: DocumentMetadataOverrides = (
+                    DocumentMetadataOverrides.from_dict(overrides)
+                )
+
                 # assert the file exists
-                self.assertIsFile(consume_task.kwargs["path"])
+                self.assertIsFile(input_doc.original_file)
 
                 # assert all expected arguments are present in the signature
                 for key, value in expected_signature.items():
-                    self.assertIn(key, consume_task.kwargs)
-                    self.assertEqual(consume_task.kwargs[key], value)
+                    if key == "override_correspondent_id":
+                        self.assertEqual(value, overrides.correspondent_id)
+                    elif key == "override_title":
+                        self.assertEqual(value, overrides.title)
+                    elif key == "override_filename":
+                        self.assertEqual(value, overrides.filename)
 
     def apply_mail_actions(self):
         """

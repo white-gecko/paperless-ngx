@@ -13,6 +13,9 @@ from typing import Set
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
+from documents.data_models import ConsumableDocument
+from documents.data_models import DocumentMetadataOverrides
+from documents.data_models import DocumentSource
 from documents.models import Tag
 from documents.parsers import is_file_ext_supported
 from documents.tasks import consume_file
@@ -122,8 +125,8 @@ def _consume(filepath: str) -> None:
     try:
         logger.info(f"Adding {filepath} to the task queue.")
         consume_file.delay(
-            filepath,
-            override_tag_ids=list(tag_ids) if tag_ids else None,
+            ConsumableDocument(DocumentSource.CONSUME_FOLDER, filepath).as_dict(),
+            DocumentMetadataOverrides(tag_ids=tag_ids).as_dict(),
         )
     except Exception:
         # Catch all so that the consumer won't crash.
