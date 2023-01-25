@@ -112,12 +112,21 @@ class MailRule(models.Model):
         null=True,
         blank=True,
     )
+
+    filter_to = models.CharField(
+        _("filter to"),
+        max_length=256,
+        null=True,
+        blank=True,
+    )
+
     filter_subject = models.CharField(
         _("filter subject"),
         max_length=256,
         null=True,
         blank=True,
     )
+
     filter_body = models.CharField(
         _("filter body"),
         max_length=256,

@@ -130,12 +130,20 @@ class BogusMailBox(ContextManager):
             from_ = criteria[criteria.index("FROM") + 1].strip('"')
             msg = filter(lambda m: from_ in m.from_, msg)
 
+        if "TO" in criteria:
+            to_ = criteria[criteria.index("TO") + 1].strip('"')
+            msg = []
+            for m in self.messages:
+                for to_addrs in m.to:
+                    if to_ in to_addrs:
+                        msg.append(m)
+
         if "UNFLAGGED" in criteria:
             msg = filter(lambda m: not m.flagged, msg)
 
         if "UNKEYWORD" in criteria:
             tag = criteria[criteria.index("UNKEYWORD") + 1].strip("'")
-            msg = filter(lambda m: "processed" not in m.flags, msg)
+            msg = filter(lambda m: tag not in m.flags, msg)
 
         if "(X-GM-LABELS" in criteria:  # ['NOT', '(X-GM-LABELS', '"processed"']
             msg = filter(lambda m: "processed" not in m.flags, msg)
@@ -175,6 +183,7 @@ def create_message(
     body: str = "",
     subject: str = "the suject",
     from_: str = "noone@mail.com",
+    to: str = "tosomeone@somewhere.com",
     seen: bool = False,
     flagged: bool = False,
     processed: bool = False,
@@ -184,6 +193,7 @@ def create_message(
     email_msg["Message-ID"] = str(uuid.uuid4())
     email_msg["Subject"] = subject
     email_msg["From"] = from_
+    email_msg["To"] = to
     email_msg.set_content(body)
 
     # Either add some default number of attachments
@@ -284,6 +294,7 @@ class TestMail(DirectoriesMixin, TestCase):
             create_message(
                 subject="Claim your $10M price now!",
                 from_="amazon@amazon-some-indian-site.org",
+                to="special@me.me",
                 seen=False,
             ),
         )
@@ -939,6 +950,7 @@ class TestMail(DirectoriesMixin, TestCase):
         self.assertEqual(self.async_task.call_count, 1)
 
         self.reset_bogus_mailbox()
+        self.async_task.reset_mock()
 
         rule.filter_subject = None
         rule.filter_body = "electronic"
@@ -946,9 +958,10 @@ class TestMail(DirectoriesMixin, TestCase):
         self.assertEqual(len(self.bogus_mailbox.messages), 3)
         self.mail_account_handler.handle_mail_account(account)
         self.assertEqual(len(self.bogus_mailbox.messages), 2)
-        self.assertEqual(self.async_task.call_count, 2)
+        self.assertEqual(self.async_task.call_count, 1)
 
         self.reset_bogus_mailbox()
+        self.async_task.reset_mock()
 
         rule.filter_from = "amazon"
         rule.filter_body = None
@@ -956,18 +969,31 @@ class TestMail(DirectoriesMixin, TestCase):
         self.assertEqual(len(self.bogus_mailbox.messages), 3)
         self.mail_account_handler.handle_mail_account(account)
         self.assertEqual(len(self.bogus_mailbox.messages), 1)
-        self.assertEqual(self.async_task.call_count, 4)
+        self.assertEqual(self.async_task.call_count, 2)
 
         self.reset_bogus_mailbox()
+        self.async_task.reset_mock()
+
+        rule.filter_to = "tosomeone"
+        rule.filter_from = None
+        rule.save()
+        self.assertEqual(len(self.bogus_mailbox.messages), 3)
+        self.mail_account_handler.handle_mail_account(account)
+        self.assertEqual(len(self.bogus_mailbox.messages), 1)
+        self.assertEqual(self.async_task.call_count, 2)
+
+        self.reset_bogus_mailbox()
+        self.async_task.reset_mock()
 
         rule.filter_from = "amazon"
         rule.filter_body = "cables"
         rule.filter_subject = "Invoice"
+        rule.filter_to = None
         rule.save()
         self.assertEqual(len(self.bogus_mailbox.messages), 3)
         self.mail_account_handler.handle_mail_account(account)
         self.assertEqual(len(self.bogus_mailbox.messages), 2)
-        self.assertEqual(self.async_task.call_count, 5)
+        self.assertEqual(self.async_task.call_count, 1)
 
     def test_auth_plain_fallback(self):
         """

@@ -52,6 +52,7 @@ class MailRuleAdmin(admin.ModelAdmin):
                 ),
                 "fields": (
                     "filter_from",
+                    "filter_to",
                     "filter_subject",
                     "filter_body",
                     "filter_attachment_filename",

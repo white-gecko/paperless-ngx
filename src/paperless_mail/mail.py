@@ -165,6 +165,8 @@ def make_criterias(rule):
         criterias["date_gte"] = maximum_age
     if rule.filter_from:
         criterias["from_"] = rule.filter_from
+    if rule.filter_to:
+        criterias["to"] = rule.filter_to
     if rule.filter_subject:
         criterias["subject"] = rule.filter_subject
     if rule.filter_body:

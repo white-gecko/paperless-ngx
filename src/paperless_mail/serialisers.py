@@ -73,6 +73,7 @@ class MailRuleSerializer(serializers.ModelSerializer):
             "account",
             "folder",
             "filter_from",
+            "filter_to",
             "filter_subject",
             "filter_body",
             "filter_attachment_filename",
