@@ -105,13 +105,6 @@ class StoragePath(MatchingModel):
 
 class Document(models.Model):
 
-    STORAGE_TYPE_UNENCRYPTED = "unencrypted"
-    STORAGE_TYPE_GPG = "gpg"
-    STORAGE_TYPES = (
-        (STORAGE_TYPE_UNENCRYPTED, _("Unencrypted")),
-        (STORAGE_TYPE_GPG, _("Encrypted with GNU Privacy Guard")),
-    )
-
     correspondent = models.ForeignKey(
         Correspondent,
         blank=True,
@@ -183,14 +176,6 @@ class Document(models.Model):
         auto_now=True,
         editable=False,
         db_index=True,
-    )
-
-    storage_type = models.CharField(
-        _("storage type"),
-        max_length=11,
-        choices=STORAGE_TYPES,
-        default=STORAGE_TYPE_UNENCRYPTED,
-        editable=False,
     )
 
     added = models.DateTimeField(
@@ -272,8 +257,6 @@ class Document(models.Model):
             fname = str(self.filename)
         else:
             fname = f"{self.pk:07}{self.file_type}"
-            if self.storage_type == self.STORAGE_TYPE_GPG:
-                fname += ".gpg"  # pragma: no cover
 
         return os.path.join(settings.ORIGINALS_DIR, fname)
 
@@ -322,8 +305,6 @@ class Document(models.Model):
     @property
     def thumbnail_path(self) -> str:
         webp_file_name = f"{self.pk:07}.webp"
-        if self.storage_type == self.STORAGE_TYPE_GPG:
-            webp_file_name += ".gpg"
 
         webp_file_path = os.path.join(settings.THUMBNAIL_DIR, webp_file_name)
 

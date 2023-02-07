@@ -34,7 +34,6 @@ from documents.tasks import consume_file
 from langdetect import detect
 from packaging import version as packaging_version
 from paperless import version
-from paperless.db import GnuPG
 from paperless.views import StandardPagination
 from rest_framework import parsers
 from rest_framework.decorators import action
@@ -270,9 +269,6 @@ class DocumentViewSet(
             if mime_type in {"application/csv", "text/csv"} and disposition == "inline":
                 mime_type = "text/plain"
 
-        if doc.storage_type == Document.STORAGE_TYPE_GPG:
-            file_handle = GnuPG.decrypted(file_handle)
-
         response = HttpResponse(file_handle, content_type=mime_type)
         # Firefox is not able to handle unicode characters in filename field
         # RFC 5987 addresses this issue
@@ -385,10 +381,7 @@ class DocumentViewSet(
     def thumb(self, request, pk=None):
         try:
             doc = Document.objects.get(id=pk)
-            if doc.storage_type == Document.STORAGE_TYPE_GPG:
-                handle = GnuPG.decrypted(doc.thumbnail_file)
-            else:
-                handle = doc.thumbnail_file
+            handle = doc.thumbnail_file
             # TODO: Send ETag information and use that to send new thumbnails
             #  if available
 

@@ -29,22 +29,14 @@ class TestFileHandling(DirectoriesMixin, TestCase):
     def test_generate_source_filename(self):
         document = Document()
         document.mime_type = "application/pdf"
-        document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
         document.save()
 
         self.assertEqual(generate_filename(document), f"{document.pk:07d}.pdf")
-
-        document.storage_type = Document.STORAGE_TYPE_GPG
-        self.assertEqual(
-            generate_filename(document),
-            f"{document.pk:07d}.pdf.gpg",
-        )
 
     @override_settings(FILENAME_FORMAT="{correspondent}/{correspondent}")
     def test_file_renaming(self):
         document = Document()
         document.mime_type = "application/pdf"
-        document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
         document.save()
 
         # Test default source_path
@@ -57,11 +49,6 @@ class TestFileHandling(DirectoriesMixin, TestCase):
 
         # Ensure that filename is properly generated
         self.assertEqual(document.filename, "none/none.pdf")
-
-        # Enable encryption and check again
-        document.storage_type = Document.STORAGE_TYPE_GPG
-        document.filename = generate_filename(document)
-        self.assertEqual(document.filename, "none/none.pdf.gpg")
 
         document.save()
 
@@ -78,7 +65,7 @@ class TestFileHandling(DirectoriesMixin, TestCase):
         self.assertEqual(os.path.isdir(settings.ORIGINALS_DIR + "/test"), True)
         self.assertEqual(os.path.isdir(settings.ORIGINALS_DIR + "/none"), False)
         self.assertEqual(
-            os.path.isfile(settings.ORIGINALS_DIR + "/test/test.pdf.gpg"),
+            os.path.isfile(settings.ORIGINALS_DIR + "/test/test.pdf"),
             True,
         )
 
@@ -86,7 +73,6 @@ class TestFileHandling(DirectoriesMixin, TestCase):
     def test_file_renaming_missing_permissions(self):
         document = Document()
         document.mime_type = "application/pdf"
-        document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
         document.save()
 
         # Ensure that filename is properly generated
@@ -122,14 +108,12 @@ class TestFileHandling(DirectoriesMixin, TestCase):
 
         document1 = Document.objects.create(
             mime_type="application/pdf",
-            storage_type=Document.STORAGE_TYPE_UNENCRYPTED,
             checksum="AAAAA",
         )
 
         document = Document()
         document.mime_type = "application/pdf"
         document.checksum = "BBBBB"
-        document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
         document.save()
 
         # Ensure that filename is properly generated
@@ -160,7 +144,6 @@ class TestFileHandling(DirectoriesMixin, TestCase):
     def test_document_delete(self):
         document = Document()
         document.mime_type = "application/pdf"
-        document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
         document.save()
 
         # Ensure that filename is properly generated
@@ -186,7 +169,6 @@ class TestFileHandling(DirectoriesMixin, TestCase):
     def test_document_delete_trash(self):
         document = Document()
         document.mime_type = "application/pdf"
-        document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
         document.save()
 
         # Ensure that filename is properly generated
@@ -210,7 +192,6 @@ class TestFileHandling(DirectoriesMixin, TestCase):
         # Create an identical document and ensure it is trashed under a new name
         document = Document()
         document.mime_type = "application/pdf"
-        document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
         document.save()
         document.filename = generate_filename(document)
         create_source_path_directory(document.source_path)
@@ -222,7 +203,6 @@ class TestFileHandling(DirectoriesMixin, TestCase):
     def test_document_delete_nofile(self):
         document = Document()
         document.mime_type = "application/pdf"
-        document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
         document.save()
 
         document.delete()
@@ -231,7 +211,6 @@ class TestFileHandling(DirectoriesMixin, TestCase):
     def test_directory_not_empty(self):
         document = Document()
         document.mime_type = "application/pdf"
-        document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
         document.save()
 
         # Ensure that filename is properly generated
@@ -285,7 +264,6 @@ class TestFileHandling(DirectoriesMixin, TestCase):
     def test_tags_with_underscore(self):
         document = Document()
         document.mime_type = "application/pdf"
-        document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
         document.save()
 
         # Add tag to document
@@ -300,7 +278,6 @@ class TestFileHandling(DirectoriesMixin, TestCase):
     def test_tags_with_dash(self):
         document = Document()
         document.mime_type = "application/pdf"
-        document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
         document.save()
 
         # Add tag to document
@@ -315,7 +292,6 @@ class TestFileHandling(DirectoriesMixin, TestCase):
     def test_tags_malformed(self):
         document = Document()
         document.mime_type = "application/pdf"
-        document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
         document.save()
 
         # Add tag to document
@@ -330,7 +306,6 @@ class TestFileHandling(DirectoriesMixin, TestCase):
     def test_tags_all(self):
         document = Document()
         document.mime_type = "application/pdf"
-        document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
         document.save()
 
         # Add tag to document
@@ -344,7 +319,6 @@ class TestFileHandling(DirectoriesMixin, TestCase):
     def test_tags_out_of_bounds(self):
         document = Document()
         document.mime_type = "application/pdf"
-        document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
         document.save()
 
         # Add tag to document
@@ -358,7 +332,6 @@ class TestFileHandling(DirectoriesMixin, TestCase):
     def test_tags_without_args(self):
         document = Document()
         document.mime_type = "application/pdf"
-        document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
         document.save()
 
         self.assertEqual(generate_filename(document), f"{document.pk:07}.pdf")
@@ -430,7 +403,6 @@ class TestFileHandling(DirectoriesMixin, TestCase):
     def test_nested_directory_cleanup(self):
         document = Document()
         document.mime_type = "application/pdf"
-        document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
         document.save()
 
         # Ensure that filename is properly generated
@@ -458,7 +430,6 @@ class TestFileHandling(DirectoriesMixin, TestCase):
         document = Document()
         document.pk = 1
         document.mime_type = "application/pdf"
-        document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
 
         self.assertEqual(generate_filename(document), "0000001.pdf")
 
@@ -484,7 +455,6 @@ class TestFileHandling(DirectoriesMixin, TestCase):
         document = Document()
         document.pk = 1
         document.mime_type = "application/pdf"
-        document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
 
         self.assertEqual(generate_filename(document), "0000001.pdf")
 
@@ -493,7 +463,6 @@ class TestFileHandling(DirectoriesMixin, TestCase):
         document = Document()
         document.pk = 1
         document.mime_type = "application/pdf"
-        document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
 
         self.assertEqual(generate_filename(document), "0000001.pdf")
 

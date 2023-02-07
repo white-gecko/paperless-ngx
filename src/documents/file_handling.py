@@ -220,8 +220,4 @@ def generate_filename(doc, counter=0, append_gpg=True, archive_filename=False):
     else:
         filename = f"{doc.pk:07}{counter_str}{filetype_str}"
 
-    # Append .gpg for encrypted files
-    if append_gpg and doc.storage_type == doc.STORAGE_TYPE_GPG:
-        filename += ".gpg"
-
     return filename

@@ -440,10 +440,9 @@ class Consumer(LoggingMixin):
                     document.filename = generate_unique_filename(document)
                     create_source_path_directory(document.source_path)
 
-                    self._write(document.storage_type, self.path, document.source_path)
+                    self._write(self.path, document.source_path)
 
                     self._write(
-                        document.storage_type,
                         thumbnail,
                         document.thumbnail_path,
                     )
@@ -455,7 +454,6 @@ class Consumer(LoggingMixin):
                         )
                         create_source_path_directory(document.archive_path)
                         self._write(
-                            document.storage_type,
                             archive_path,
                             document.archive_path,
                         )
@@ -540,8 +538,6 @@ class Consumer(LoggingMixin):
             )
             self.log("debug", f"Creation date from st_mtime: {create_date}")
 
-        storage_type = Document.STORAGE_TYPE_UNENCRYPTED
-
         with open(self.path, "rb") as f:
             document = Document.objects.create(
                 title=(self.override_title or file_info.title)[:127],
@@ -550,7 +546,6 @@ class Consumer(LoggingMixin):
                 checksum=hashlib.md5(f.read()).hexdigest(),
                 created=create_date,
                 modified=create_date,
-                storage_type=storage_type,
                 original_filename=self.filename,
             )
 
@@ -578,7 +573,7 @@ class Consumer(LoggingMixin):
         if self.override_asn:
             document.archive_serial_number = self.override_asn
 
-    def _write(self, storage_type, source, target):
+    def _write(self, source, target):
         with open(source, "rb") as read_file:
             with open(target, "wb") as write_file:
                 write_file.write(read_file.read())

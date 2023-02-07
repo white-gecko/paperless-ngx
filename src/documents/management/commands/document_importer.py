@@ -216,8 +216,6 @@ class Command(BaseCommand):
             else:
                 archive_path = None
 
-            document.storage_type = Document.STORAGE_TYPE_UNENCRYPTED
-
             with FileLock(settings.MEDIA_LOCK):
                 if os.path.isfile(document.source_path):
                     raise FileExistsError(document.source_path)

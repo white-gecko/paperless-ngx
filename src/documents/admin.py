@@ -38,7 +38,6 @@ class DocumentAdmin(admin.ModelAdmin):
         "added",
         "modified",
         "mime_type",
-        "storage_type",
         "filename",
         "checksum",
         "archive_filename",

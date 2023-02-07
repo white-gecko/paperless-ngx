@@ -60,9 +60,8 @@ class TestExportImport(DirectoriesMixin, TestCase):
             content="Content",
             checksum="82186aaa94f0b98697d704b90fd1c072",
             title="wow_dec",
-            filename="0000004.pdf.gpg",
+            filename="0000004.pdf",
             mime_type="application/pdf",
-            storage_type=Document.STORAGE_TYPE_GPG,
         )
 
         self.comment = Comment.objects.create(
@@ -183,11 +182,6 @@ class TestExportImport(DirectoriesMixin, TestCase):
                 with open(fname, "rb") as f:
                     checksum = hashlib.md5(f.read()).hexdigest()
                 self.assertEqual(checksum, element["fields"]["checksum"])
-
-                self.assertEqual(
-                    element["fields"]["storage_type"],
-                    Document.STORAGE_TYPE_UNENCRYPTED,
-                )
 
                 if document_exporter.EXPORTER_ARCHIVE_NAME in element:
                     fname = os.path.join(
