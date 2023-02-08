@@ -68,7 +68,7 @@ class TestMigrateMimeType(DirectoriesMixin, TestMigrations):
                 "samples",
                 "documents",
                 "originals",
-                "0000004.pdf.gpg",
+                "0000004.pdf",
             ),
             source_path_before(doc2),
         )
