@@ -410,6 +410,10 @@ export class DocumentDetailComponent
       .subscribe({
         next: (doc) => {
           Object.assign(this.document, doc)
+          doc['permissions_form'] = {
+            owner: doc.owner,
+            set_permissions: doc.permissions,
+          }
           this.title = doc.title
           this.documentForm.patchValue(doc)
           this.openDocumentService.setDirty(doc, false)
