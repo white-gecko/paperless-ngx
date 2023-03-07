@@ -1,8 +1,8 @@
-#!/command/with-contenv bashio
+#!/command/with-contenv bash
 # shellcheck shell=bash
 
 install_languages() {
-	bashio::log.info "Installing languages..."
+	echo "Installing languages..."
 
 	read -ra langs <<<"$1"
 
@@ -16,25 +16,29 @@ install_languages() {
 		pkg="tesseract-ocr-$lang"
 
 		if dpkg -s "$pkg" &>/dev/null; then
-			bashio::log.info "Package $pkg already installed!"
+			echo "Package $pkg already installed!"
 			continue
 		fi
 
 		if ! apt-cache show "$pkg" &>/dev/null; then
-			bashio::log.info "Package $pkg not found! :("
+			echo "Package $pkg not found! :("
 			continue
 		fi
 
 		echo "Installing package $pkg..."
 		if ! apt-get -y install "$pkg" &>/dev/null; then
-			bashio::log.error "Could not install $pkg"
+			echo "Could not install $pkg"
 			exit 1
 		fi
 	done
 }
 
-bashio::log.info "Checking if additional teseract languages needed"
+echo "Checking if additional teseract languages needed"
+
 # Install additional languages if specified
 if [[ -n "$PAPERLESS_OCR_LANGUAGES" ]]; then
 	install_languages "$PAPERLESS_OCR_LANGUAGES"
+	echo "Additional packages installed"
+else
+	echo "No additional installs requested"
 fi

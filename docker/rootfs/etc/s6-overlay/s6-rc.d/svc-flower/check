@@ -1,13 +1,13 @@
-#!/command/with-contenv bashio
+#!/command/with-contenv bash
 # shellcheck shell=bash
 
-bashio::log.info "Checking if we should start flower..."
+echo "Checking if we should start flower..."
 
 if [[ -n  "${PAPERLESS_ENABLE_FLOWER}" ]]; then
 	# Small delay to allow celery to be up first
-	bashio::log.info "Starting flower in 5s"
+	echo "Starting flower in 5s"
 	sleep 5
 	s6-svc -U /run/s6/services/svc-flower
 else
-	bashio::log.info "Not starting flower"
+	echo "Not starting flower"
 fi

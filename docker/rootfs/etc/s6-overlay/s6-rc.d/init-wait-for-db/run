@@ -1,13 +1,13 @@
-#!/command/with-contenv bashio
+#!/command/with-contenv bash
 # shellcheck shell=bash
 
-bashio::log.info "Waiting for DB to report ready"
+echo "Waiting for DB to report ready"
 
 wait_for_postgres() {
 	local attempt_num=1
 	local -r max_attempts=5
 
-	bashio::log.info "Waiting for PostgreSQL to start..."
+	echo "Waiting for PostgreSQL to start..."
 
 	local -r host="${PAPERLESS_DBHOST:-localhost}"
 	local -r port="${PAPERLESS_DBPORT:-5432}"
@@ -17,10 +17,10 @@ wait_for_postgres() {
 	while [ ! "$(pg_isready -h ${host} -p ${port})" ]; do
 
 		if [ $attempt_num -eq $max_attempts ]; then
-			bashio::log.fatal "Unable to connect to database."
+			echo "Unable to connect to database."
 			exit 1
 		else
-			bashio::log.warning "Attempt $attempt_num failed! Trying again in 5 seconds..."
+			echo "Attempt $attempt_num failed! Trying again in 5 seconds..."
 		fi
 
 		attempt_num=$(("$attempt_num" + 1))
@@ -29,7 +29,7 @@ wait_for_postgres() {
 }
 
 wait_for_mariadb() {
-	bashio::log.info "Waiting for MariaDB to start..."
+	echo "Waiting for MariaDB to start..."
 
 	local -r host="${PAPERLESS_DBHOST:=localhost}"
 	local -r port="${PAPERLESS_DBPORT:=3306}"
@@ -42,10 +42,10 @@ wait_for_mariadb() {
 	while ! true > /dev/tcp/$host/$port; do
 
 		if [ $attempt_num -eq $max_attempts ]; then
-			bashio::log.fatal "Unable to connect to database."
+			echo "Unable to connect to database."
 			exit 1
 		else
-			bashio::log.warning "Attempt $attempt_num failed! Trying again in 5 seconds..."
+			echo "Attempt $attempt_num failed! Trying again in 5 seconds..."
 
 		fi
 

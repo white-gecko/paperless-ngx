@@ -66,7 +66,7 @@ RUN set -eux \
     && echo "Determining arch" \
       && S6_ARCH="" \
       && if [ "${TARGETARCH}${TARGETVARIANT}" = "amd64" ]; then S6_ARCH="x86_64"; \
-      elif [ "${TARGETARCH}${TARGETVARIANT}" = "aarch64" ]; then S6_ARCH="aarch64"; \
+      elif [ "${TARGETARCH}${TARGETVARIANT}" = "arm64" ]; then S6_ARCH="aarch64"; \
       elif [ "${TARGETARCH}${TARGETVARIANT}" = "armv7" ]; then S6_ARCH="armhf"; fi \
     && echo "Installing s6-overlay for ${S6_ARCH}" \
       && curl --fail --silent --show-error -L --output s6-overlay-noarch.tar.xz --location "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz" \
@@ -87,13 +87,6 @@ RUN set -eux \
       && echo "Removing downloaded archives" \
         && rm ./*.tar.xz \
         && rm ./*.sha256 \
-    && echo "Installing bashio" \
-      && curl --fail --silent -J -L --output /tmp/bashio.tar.gz "https://github.com/hassio-addons/bashio/archive/v0.14.3.tar.gz" \
-      && mkdir /tmp/bashio \
-      && tar zxvf /tmp/bashio.tar.gz --strip 1 -C /tmp/bashio \
-      && mv /tmp/bashio/lib /usr/lib/bashio \
-      && ln -s /usr/lib/bashio/bashio /usr/bin/bashio \
-      && rm /tmp/bashio.tar.gz \
     && echo "Cleaning up image" \
       && apt-get -y purge ${S6_BUILD_TIME_PKGS} \
       && apt-get -y autoremove --purge \

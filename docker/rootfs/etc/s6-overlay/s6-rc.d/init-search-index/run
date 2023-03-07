@@ -1,11 +1,11 @@
-#!/command/with-contenv bashio
+#!/command/with-contenv bash
 # shellcheck shell=bash
 
-local -r index_version=3
-local -r index_version_file=${DATA_DIR}/.index_version
+index_version=3
+index_version_file=${DATA_DIR}/.index_version
 
 if [[ (! -f "${index_version_file}") || $(<"${index_version_file}") != "$index_version" ]]; then
-	bashio::log.info "Search index out of date. Updating..."
-	python3 manage.py document_index reindex --no-progress-bar
-	echo ${index_version} | tee "${index_version_file}" >/dev/null
+	echo "Search index out of date. Updating..."
+	s6-setuidgid paperless python3 manage.py document_index reindex --no-progress-bar
+	s6-setuidgid paperless echo ${index_version} | tee "${index_version_file}" >/dev/null
 fi

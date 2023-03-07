@@ -1,7 +1,5 @@
-#!/command/with-contenv bashio
+#!/command/with-contenv bash
 # shellcheck shell=bash
-
-set -eu
 
 if find /run/s6/container_environment/*"_FILE" -maxdepth 1 > /dev/null 2>&1; then
 	for FILENAME in /run/s6/container_environment/*; do
@@ -13,9 +11,9 @@ if find /run/s6/container_environment/*"_FILE" -maxdepth 1 > /dev/null 2>&1; the
 				FILESTRIP=${FILENAME//_FILE/}
 				# Set environment variable
 				cat "${SECRETFILE}" >"${FILESTRIP}"
-				bashio::log.info "[env-init] ${FILESTRIP##*/} set from ${FILENAME##*/}"
+				echo "[env-init] ${FILESTRIP##*/} set from ${FILENAME##*/}"
 			else
-				bashio::log.warning "[env-init] cannot find secret in ${FILENAME##*/}"
+				echo "[env-init] cannot find secret in ${FILENAME##*/}"
 			fi
 		fi
 	done

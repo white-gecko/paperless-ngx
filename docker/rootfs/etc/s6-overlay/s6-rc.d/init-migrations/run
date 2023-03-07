@@ -1,13 +1,15 @@
-#!/command/with-contenv bashio
+#!/command/with-contenv bash
 # shellcheck shell=bash
 
-local -r data_dir="${PAPERLESS_DATA_DIR:-/usr/src/paperless/data}"
+data_dir="${PAPERLESS_DATA_DIR:-/usr/src/paperless/data}"
+paperless_src_dir="/usr/src/paperless/src"
 
 (
 	# flock is in place to prevent multiple containers from doing migrations
 	# simultaneously. This also ensures that the db is ready when the command
 	# of the current container starts.
 	flock 200
-	bashio::log.info "Apply database migrations..."
+	echo "Apply database migrations..."
+	cd "${paperless_src_dir}"
 	python3 manage.py migrate --skip-checks --no-input
 ) 200>"${data_dir}/migration_lock"
