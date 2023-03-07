@@ -1,7 +1,5 @@
-#!/command/with-contenv bash
+#!/usr/bin/with-contenv bash
 # shellcheck shell=bash
-
-echo "Waiting for DB to report ready"
 
 wait_for_postgres() {
 	local attempt_num=1
@@ -55,7 +53,9 @@ wait_for_mariadb() {
 }
 
 if [[ "${PAPERLESS_DBENGINE}" == "mariadb" ]]; then
+	echo "Waiting for MariaDB to report ready"
 	wait_for_mariadb
 elif [[ -n "${PAPERLESS_DBHOST}" ]]; then
+	echo "Waiting for PostgresSQL to report ready"
 	wait_for_postgres
 fi
