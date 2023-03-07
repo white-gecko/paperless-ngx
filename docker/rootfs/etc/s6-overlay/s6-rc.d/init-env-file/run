@@ -1,0 +1,22 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+
+set -eu
+
+if find /run/s6/container_environment/*"_FILE" -maxdepth 1 > /dev/null 2>&1; then
+	for FILENAME in /run/s6/container_environment/*; do
+		if [[ "${FILENAME##*/}" == PAPERLESS_*_FILE ]]; then
+			SECRETFILE=$(cat "${FILENAME}")
+			# Check the file exists
+			if [[ -f ${SECRETFILE} ]]; then
+				# Trim off trailing _FILE
+				FILESTRIP=${FILENAME//_FILE/}
+				# Set environment variable
+				cat "${SECRETFILE}" >"${FILESTRIP}"
+				bashio::log.info "[env-init] ${FILESTRIP##*/} set from ${FILENAME##*/}"
+			else
+				bashio::log.warning "[env-init] cannot find secret in ${FILENAME##*/}"
+			fi
+		fi
+	done
+fi

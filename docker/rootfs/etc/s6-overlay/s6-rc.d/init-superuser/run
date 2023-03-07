@@ -1,0 +1,6 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+
+if [[ -n "${PAPERLESS_ADMIN_USER}" ]]; then
+	python3 manage.py manage_superuser
+fi

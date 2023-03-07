@@ -1,0 +1,6 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+
+# Explicitly run the Django system checks
+bashio::log.info "Running Django checks"
+python3 manage.py check

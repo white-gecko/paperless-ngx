@@ -1,0 +1,32 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+
+set -eu
+
+local -r export_dir="/usr/src/paperless/export"
+local -r data_dir="${PAPERLESS_DATA_DIR:-/usr/src/paperless/data}"
+local -r media_root_dir="${PAPERLESS_MEDIA_ROOT:-/usr/src/paperless/media}"
+local -r consume_dir="${PAPERLESS_CONSUMPTION_DIR:-/usr/src/paperless/consume}"
+local -r tmp_dir="/tmp/paperless"
+
+for dir in \
+	"${export_dir}" \
+	"${data_dir}" "${data_dir}/index" \
+	"${media_root_dir}" "${media_root_dir}/documents" "${media_root_dir}/documents/originals" "${media_root_dir}/documents/thumbnails" \
+	"${consume_dir}" \
+	"${tmp_dir}"; do
+	if [[ ! -d "${dir}" ]]; then
+		bashio::log.info "Creating directory ${dir}"
+		mkdir "${dir}"
+	fi
+done
+
+bashio::log.info "Adjusting file and folder permissions"
+chown -R paperless:paperless "${tmp_dir}"
+	for dir in \
+		"${export_dir}" \
+		"${data_dir}" \
+		"${media_root_dir}" \
+		"${consume_dir}"; do
+		find "${dir}" -not \( -user paperless -and -group paperless \) -exec chown paperless:paperless {} +
+	done

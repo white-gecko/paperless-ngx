@@ -1,0 +1,4 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+
+bashio::log.info "paperless-ngx docker container init completed"

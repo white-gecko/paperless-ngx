@@ -29,15 +29,81 @@ COPY Pipfile* ./
 
 RUN set -eux \
   && echo "Installing pipenv" \
-    && python3 -m pip install --no-cache-dir --upgrade pipenv==2022.11.30 \
+    && python3 -m pip install --no-cache-dir --upgrade pipenv==2023.2.18 \
   && echo "Generating requirement.txt" \
     && pipenv requirements > requirements.txt
+
+# Stage: s6-overlay-base
+# Purpose: Installs s6-overlay and rootfs
+# Comments:
+#  - Don't leave anything extra in here
+FROM python:3.9-slim-bullseye as s6-overlay-base
+
+WORKDIR /usr/src/s6
+
+ENV \
+    LANG="C.UTF-8" \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_PREFER_BINARY=1 \
+    PS1="$(whoami)@$(hostname):$(pwd)$ " \
+    S6_BEHAVIOUR_IF_STAGE2_FAILS=2 \
+    S6_CMD_WAIT_FOR_SERVICES_MAXTIME=0 \
+    S6_CMD_WAIT_FOR_SERVICES=1
+
+# Buildx provided, must be defined to use though
+ARG TARGETARCH
+ARG TARGETVARIANT
+ARG S6_OVERLAY_VERSION=3.1.4.1
+
+ARG S6_BUILD_TIME_PKGS="curl \
+                        xz-utils"
+
+RUN set -eux \
+    && echo "Installing build time packages" \
+      && apt-get update \
+      && apt-get install --yes --quiet --no-install-recommends ${S6_BUILD_TIME_PKGS} \
+    && echo "Determining arch" \
+      && S6_ARCH="" \
+      && if [ "${TARGETARCH}${TARGETVARIANT}" = "amd64" ]; then S6_ARCH="x86_64"; \
+      elif [ "${TARGETARCH}${TARGETVARIANT}" = "aarch64" ]; then S6_ARCH="aarch64"; \
+      elif [ "${TARGETARCH}${TARGETVARIANT}" = "armv7" ]; then S6_ARCH="armhf"; fi \
+    && echo "Installing s6-overlay for ${S6_ARCH}" \
+      && curl --fail --silent --show-error -L --output s6-overlay-noarch.tar.xz --location "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz" \
+      && curl --fail --silent --show-error -L --output s6-overlay-noarch.tar.xz.sha256 "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz.sha256" \
+      && curl --fail --silent --show-error -L --output s6-overlay-${S6_ARCH}.tar.xz --location "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-${S6_ARCH}.tar.xz" \
+      && curl --fail --silent --show-error -L --output s6-overlay-${S6_ARCH}.tar.xz.sha256 "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-${S6_ARCH}.tar.xz.sha256" \
+      && curl --fail --silent --show-error -L --output s6-overlay-symlinks-noarch.tar.xz "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-symlinks-noarch.tar.xz" \
+      && curl --fail --silent --show-error -L --output s6-overlay-symlinks-noarch.tar.xz.sha256 "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-symlinks-noarch.tar.xz.sha256" \
+      && curl --fail --silent --show-error -L --output s6-overlay-symlinks-arch.tar.xz "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-symlinks-arch.tar.xz" \
+      && curl --fail --silent --show-error -L --output s6-overlay-symlinks-arch.tar.xz.sha256 "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-symlinks-arch.tar.xz.sha256" \
+      && echo "Validating s6-archives" \
+        && sha256sum -c ./*.sha256 \
+      && echo "Unpacking archives" \
+        && tar -C / -Jxpf s6-overlay-noarch.tar.xz \
+        && tar -C / -Jxpf s6-overlay-${S6_ARCH}.tar.xz \
+        && tar -C / -Jxpf s6-overlay-symlinks-noarch.tar.xz \
+        && tar -C / -Jxpf s6-overlay-symlinks-arch.tar.xz \
+      && echo "Removing downloaded archives" \
+        && rm ./*.tar.xz \
+        && rm ./*.sha256 \
+    && echo "Installing bashio" \
+      && curl --fail --silent -J -L --output /tmp/bashio.tar.gz "https://github.com/hassio-addons/bashio/archive/v0.14.3.tar.gz" \
+      && mkdir /tmp/bashio \
+      && tar zxvf /tmp/bashio.tar.gz --strip 1 -C /tmp/bashio \
+      && mv /tmp/bashio/lib /usr/lib/bashio \
+      && ln -s /usr/lib/bashio/bashio /usr/bin/bashio \
+      && rm /tmp/bashio.tar.gz \
+    && echo "Cleaning up image" \
+      && apt-get -y purge ${S6_BUILD_TIME_PKGS} \
+      && apt-get -y autoremove --purge \
+      && rm -rf /var/lib/apt/lists/*
 
 # Stage: main-app
 # Purpose: The final image
 # Comments:
 #  - Don't leave anything extra in here
-FROM python:3.9-slim-bullseye as main-app
+FROM s6-overlay-base as main-app
 
 LABEL org.opencontainers.image.authors="paperless-ngx team <hello@paperless-ngx.com>"
 LABEL org.opencontainers.image.documentation="https://docs.paperless-ngx.com/"
@@ -124,9 +190,7 @@ RUN set -eux \
   echo "Installing system packages" \
     && apt-get update \
     && apt-get install --yes --quiet --no-install-recommends ${RUNTIME_PACKAGES} \
-    && rm -rf /var/lib/apt/lists/* \
-  && echo "Installing supervisor" \
-    && python3 -m pip install --default-timeout=1000 --upgrade --no-cache-dir supervisor==4.2.5
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy gunicorn config
 # Changes very infrequently
@@ -140,14 +204,8 @@ WORKDIR /usr/src/paperless/src/docker/
 
 COPY [ \
   "docker/imagemagick-policy.xml", \
-  "docker/supervisord.conf", \
-  "docker/docker-entrypoint.sh", \
-  "docker/docker-prepare.sh", \
-  "docker/paperless_cmd.sh", \
   "docker/wait-for-redis.py", \
-  "docker/env-from-file.sh", \
   "docker/management_script.sh", \
-  "docker/flower-conditional.sh", \
   "docker/install_management_commands.sh", \
   "/usr/src/paperless/src/docker/" \
 ]
@@ -155,22 +213,9 @@ COPY [ \
 RUN set -eux \
   && echo "Configuring ImageMagick" \
     && mv imagemagick-policy.xml /etc/ImageMagick-6/policy.xml \
-  && echo "Configuring supervisord" \
-    && mkdir /var/log/supervisord /var/run/supervisord \
-    && mv supervisord.conf /etc/supervisord.conf \
   && echo "Setting up Docker scripts" \
-    && mv docker-entrypoint.sh /sbin/docker-entrypoint.sh \
-    && chmod 755 /sbin/docker-entrypoint.sh \
-    && mv docker-prepare.sh /sbin/docker-prepare.sh \
-    && chmod 755 /sbin/docker-prepare.sh \
     && mv wait-for-redis.py /sbin/wait-for-redis.py \
     && chmod 755 /sbin/wait-for-redis.py \
-    && mv env-from-file.sh /sbin/env-from-file.sh \
-    && chmod 755 /sbin/env-from-file.sh \
-    && mv paperless_cmd.sh /usr/local/bin/paperless_cmd.sh \
-    && chmod 755 /usr/local/bin/paperless_cmd.sh \
-    && mv flower-conditional.sh /usr/local/bin/flower-conditional.sh \
-    && chmod 755 /usr/local/bin/flower-conditional.sh \
   && echo "Installing managment commands" \
     && chmod +x install_management_commands.sh \
     && ./install_management_commands.sh
@@ -257,8 +302,9 @@ VOLUME ["/usr/src/paperless/data", \
         "/usr/src/paperless/consume", \
         "/usr/src/paperless/export"]
 
-ENTRYPOINT ["/sbin/docker-entrypoint.sh"]
+ENTRYPOINT ["/init"]
 
 EXPOSE 8000
 
-CMD ["/usr/local/bin/paperless_cmd.sh"]
+# TODO Move this to the s6-base.  Here for caching
+COPY ./docker/rootfs /

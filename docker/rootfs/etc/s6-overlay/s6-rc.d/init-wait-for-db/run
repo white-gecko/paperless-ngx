@@ -1,0 +1,61 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+
+bashio::log.info "Waiting for DB to report ready"
+
+wait_for_postgres() {
+	local attempt_num=1
+	local -r max_attempts=5
+
+	bashio::log.info "Waiting for PostgreSQL to start..."
+
+	local -r host="${PAPERLESS_DBHOST:-localhost}"
+	local -r port="${PAPERLESS_DBPORT:-5432}"
+
+	# Disable warning, host and port can't have spaces
+	# shellcheck disable=SC2086
+	while [ ! "$(pg_isready -h ${host} -p ${port})" ]; do
+
+		if [ $attempt_num -eq $max_attempts ]; then
+			bashio::log.fatal "Unable to connect to database."
+			exit 1
+		else
+			bashio::log.warning "Attempt $attempt_num failed! Trying again in 5 seconds..."
+		fi
+
+		attempt_num=$(("$attempt_num" + 1))
+		sleep 5
+	done
+}
+
+wait_for_mariadb() {
+	bashio::log.info "Waiting for MariaDB to start..."
+
+	local -r host="${PAPERLESS_DBHOST:=localhost}"
+	local -r port="${PAPERLESS_DBPORT:=3306}"
+
+	local attempt_num=1
+	local -r max_attempts=5
+
+	# Disable warning, host and port can't have spaces
+	# shellcheck disable=SC2086
+	while ! true > /dev/tcp/$host/$port; do
+
+		if [ $attempt_num -eq $max_attempts ]; then
+			bashio::log.fatal "Unable to connect to database."
+			exit 1
+		else
+			bashio::log.warning "Attempt $attempt_num failed! Trying again in 5 seconds..."
+
+		fi
+
+		attempt_num=$(("$attempt_num" + 1))
+		sleep 5
+	done
+}
+
+if [[ "${PAPERLESS_DBENGINE}" == "mariadb" ]]; then
+	wait_for_mariadb
+elif [[ -n "${PAPERLESS_DBHOST}" ]]; then
+	wait_for_postgres
+fi
