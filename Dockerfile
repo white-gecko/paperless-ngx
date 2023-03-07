@@ -46,6 +46,7 @@ ENV \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_PREFER_BINARY=1 \
+    PIP_FIND_LINKS="https://wheel-index.linuxserver.io/ubuntu/" \
     PS1="$(whoami)@$(hostname):$(pwd)$ " \
     S6_BEHAVIOUR_IF_STAGE2_FAILS=2 \
     S6_CMD_WAIT_FOR_SERVICES_MAXTIME=0 \
