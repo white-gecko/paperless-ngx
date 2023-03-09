@@ -3,4 +3,4 @@
 
 cd ${PAPERLESS_SRC_DIR}
 
-s6-setuidgid paperless /usr/local/bin/celery --app paperless beat --loglevel INFO
+exec s6-setuidgid paperless /usr/local/bin/celery --app paperless beat --loglevel INFO
