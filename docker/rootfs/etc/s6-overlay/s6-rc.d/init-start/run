@@ -2,3 +2,6 @@
 # shellcheck shell=bash
 
 echo "paperless-ngx docker container starting..."
+
+# Set some directories into environment for other steps to access
+printf "/usr/src/paperless/src" > /var/run/s6/container_environment/PAPERLESS_SRC_DIR
