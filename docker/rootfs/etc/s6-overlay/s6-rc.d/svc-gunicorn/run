@@ -3,4 +3,4 @@
 
 cd /usr/src/paperless/src/
 
-s6-setuidgid /usr/local/bin/gunicorn -c /usr/src/paperless/gunicorn.conf.py paperless.asgi:application
+s6-setuidgid paperless /usr/local/bin/gunicorn -c /usr/src/paperless/gunicorn.conf.py paperless.asgi:application

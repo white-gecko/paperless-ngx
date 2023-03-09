@@ -9,10 +9,11 @@ wait_for_postgres() {
 
 	local -r host="${PAPERLESS_DBHOST:-localhost}"
 	local -r port="${PAPERLESS_DBPORT:-5432}"
+	local -r user="${PAPERLESS_DBUSER:-paperless}"
 
 	# Disable warning, host and port can't have spaces
 	# shellcheck disable=SC2086
-	while [ ! "$(pg_isready -h ${host} -p ${port})" ]; do
+	while [ ! "$(pg_isready -h ${host} -p ${port} --username ${user})" ]; do
 
 		if [ $attempt_num -eq $max_attempts ]; then
 			echo "Unable to connect to database."
